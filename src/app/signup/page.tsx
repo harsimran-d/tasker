@@ -11,7 +11,10 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
-  const [formErrors, setFormErrors] = useState({ username: [], password: [] });
+  const [formErrors, setFormErrors] = useState({
+    username: [""],
+    password: [""],
+  });
   const router = useRouter();
   const handleSignup = async (e: any) => {
     e.preventDefault();
@@ -20,20 +23,22 @@ export default function SignupPage() {
     setFormErrors({ username: [], password: [] });
     setLoading(true);
 
+    if (password !== confirmPassword) {
+      setFormErrors({ ...formErrors, password: ["Passwords do not match."] });
+      setError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
     try {
-      if (password !== confirmPassword) {
-        throw new Error(
-          JSON.stringify({ password: ["Passwords do not match."] }),
-        );
-      }
-      const success = await signUp(username, password);
-      if (success) {
-        router.push("/api/auth/signin?callbackUrl=http://localhost:3000/");
+      const result = await signUp(username, password);
+      if (result.success) {
+        setSuccess(result.message ?? "Signup successful");
+        router.push("/api/auth/signin?callbackUrl=/dashboard");
+      } else {
+        setError(result.message || "Signup failed.");
       }
     } catch (error: any) {
-      const parsedError = JSON.parse(error.message);
-      setFormErrors(parsedError);
-      setError("Signup failed. Please check your inputs.");
+      setError("Something went wrong.");
     } finally {
       setLoading(false);
     }
